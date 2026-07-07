@@ -347,24 +347,29 @@
                 };
 
                 function compileField(xStr, yStr, zStr) {
-                    try {
-                        const nodeX = math.parse(xStr); const nodeY = math.parse(yStr); const nodeZ = math.parse(zStr);
-                        katex.render(`\\displaystyle P = ${nodeX.toTex()}`, document.getElementById('latex-x'), { throwOnError: false });
-                        katex.render(`\\displaystyle Q = ${nodeY.toTex()}`, document.getElementById('latex-y'), { throwOnError: false });
-                        katex.render(`\\displaystyle R = ${nodeZ.toTex()}`, document.getElementById('latex-z'), { throwOnError: false });
+            try {
+                const nodeX = math.parse(xStr); const nodeY = math.parse(yStr); const nodeZ = math.parse(zStr);
 
-                        const formatMath = (str) => str.replace(/\^/g, '**');
-                        const ctx = `const sin=Math.sin, cos=Math.cos, tan=Math.tan, exp=Math.exp, abs=Math.abs, pow=Math.pow, sqrt=Math.sqrt, PI=Math.PI, e=Math.E;`;
-                        const fnX = new Function('x', 'y', 'z', `${ctx} return ${formatMath(xStr)};`);
-                        const fnY = new Function('x', 'y', 'z', `${ctx} return ${formatMath(yStr)};`);
-                        const fnZ = new Function('x', 'y', 'z', `${ctx} return ${formatMath(zStr)};`);
-                        fnX(1,1,1); fnY(1,1,1); fnZ(1,1,1); 
-                        return (x, y, z) => new THREE.Vector3(fnX(x,y,z), fnY(x,y,z), fnZ(x,y,z));
-                    } catch (err) {
-                        console.error("Syntax Error", err);
-                        return null;
-                    }
-                }
+                const formatMath = (str) => str.replace(/\^/g, '**');
+                const ctx = `const sin=Math.sin, cos=Math.cos, tan=Math.tan, exp=Math.exp, abs=Math.abs, pow=Math.pow, sqrt=Math.sqrt, PI=Math.PI, e=Math.E;`;
+                const fnX = new Function('x', 'y', 'z', `${ctx} return ${formatMath(xStr)};`);
+                const fnY = new Function('x', 'y', 'z', `${ctx} return ${formatMath(yStr)};`);
+                const fnZ = new Function('x', 'y', 'z', `${ctx} return ${formatMath(zStr)};`);
+                
+                // Test evaluation to catch undefined variables before updating the DOM
+                fnX(1,1,1); fnY(1,1,1); fnZ(1,1,1); 
+
+                // Update UI only if compilation and test evaluation succeed
+                katex.render(`\\displaystyle P = ${nodeX.toTex()}`, document.getElementById('latex-x'), { throwOnError: false });
+                katex.render(`\\displaystyle Q = ${nodeY.toTex()}`, document.getElementById('latex-y'), { throwOnError: false });
+                katex.render(`\\displaystyle R = ${nodeZ.toTex()}`, document.getElementById('latex-z'), { throwOnError: false });
+
+                return (x, y, z) => new THREE.Vector3(fnX(x,y,z), fnY(x,y,z), fnZ(x,y,z));
+            } catch (err) {
+                console.warn("Syntax Error: Field not compiled. Reverting to previous state.");
+                return null;
+            }
+        }
 
                 const MAX_BUFFER = 100000;
                 const TRAIL_LENGTH = 25; 
